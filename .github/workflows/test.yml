@@ -6,7 +6,7 @@ on:
       docker_images:
         description: '请填写docker镜像名称，多个用英文逗号分开'
         required: true
-        default: 'amazoncorretto:8-alpine'
+        default: 'amazoncorretto:8'   # 改为非 Alpine 版本
 
 jobs:
   pull_and_package:
@@ -32,18 +32,18 @@ jobs:
         run: |
           base_image="${{ github.event.inputs.docker_images }}"
           base_image="${base_image%%,*}"
-          echo "Building my-java-base:8-alpine (ARM64) from ${base_image}"
-      
+          echo "Building my-java-base:8 (ARM64) from ${base_image}"
+
           cat > Dockerfile.font <<EOF
           FROM ${base_image}
-          # 直接用 --repository 指定源，避免 sed 失败
-          RUN apk add --no-cache --repository http://mirrors.ustc.edu.cn/alpine/v3.24/main --repository http://mirrors.ustc.edu.cn/alpine/v3.24/community ttf-dejavu fontconfig
+          RUN yum install -y dejavu-sans-fonts fontconfig && yum clean all
           EOF
-      
-          docker buildx build --platform linux/arm64 -t my-java-base:8-alpine --load -f Dockerfile.font .
-      
-          docker save my-java-base:8-alpine | gzip > my-java-base-8-alpine-arm64.tar.gz
-          docker rmi my-java-base:8-alpine || true
+
+          docker buildx build --platform linux/arm64 -t my-java-base:8 --load -f Dockerfile.font .
+
+          docker save my-java-base:8 | gzip > my-java-base-8-arm64.tar.gz
+          docker rmi my-java-base:8 || true
+          rm Dockerfile.font
 
       - name: List generated files (debug step)
         run: |
@@ -60,9 +60,9 @@ jobs:
           body: |
             [![Github](https://img.shields.io/badge/RELEASE:DockerTarBuilder-123456?logo=github&logoColor=fff&labelColor=green&style=for-the-badge)](https://www.bilibili.com/video/BV1EZ421M7mL) [![Github](https://img.shields.io/badge/国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge)](https://wkdaily.cpolar.top/archives/1)
             ### 包含 ARM64 镜像
-            - `my-java-base-8-alpine-arm64.tar.gz`：包含 ttf-dejavu 和 fontconfig 的 Java 8 基础镜像（使用中科大源构建）
+            - `my-java-base-8-arm64.tar.gz`：基于 Amazon Corretto 8（非 Alpine）并包含 dejavu 字体和 fontconfig
             ### How to use?
-            `docker load -i my-java-base-8-alpine-arm64.tar.gz`
+            `docker load -i my-java-base-8-arm64.tar.gz`
             ### Video teaching
             [![Bilibili](https://img.shields.io/badge/Bilibili-123456?logo=bilibili&logoColor=fff&labelColor=fb7299)](https://www.bilibili.com/video/BV1yyq6YREdF)
           draft: false

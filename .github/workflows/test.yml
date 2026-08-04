@@ -6,7 +6,7 @@ on:
       docker_images:
         description: '请填写docker镜像名称，多个用英文逗号分开'
         required: true
-        default: 'amazoncorretto:8'   # 改为非 Alpine 版本
+        default: 'eclipse-temurin:8-jre'   # 换为 Ubuntu 基础镜像
 
 jobs:
   pull_and_package:
@@ -36,7 +36,9 @@ jobs:
 
           cat > Dockerfile.font <<EOF
           FROM ${base_image}
-          RUN yum install -y dejavu-sans-fonts fontconfig && yum clean all
+          # 更换为阿里云 APT 源，加速并避免网络问题
+          RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+          RUN apt-get update && apt-get install -y fonts-dejavu fontconfig && rm -rf /var/lib/apt/lists/*
           EOF
 
           docker buildx build --platform linux/arm64 -t my-java-base:8 --load -f Dockerfile.font .
@@ -60,7 +62,7 @@ jobs:
           body: |
             [![Github](https://img.shields.io/badge/RELEASE:DockerTarBuilder-123456?logo=github&logoColor=fff&labelColor=green&style=for-the-badge)](https://www.bilibili.com/video/BV1EZ421M7mL) [![Github](https://img.shields.io/badge/国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge)](https://wkdaily.cpolar.top/archives/1)
             ### 包含 ARM64 镜像
-            - `my-java-base-8-arm64.tar.gz`：基于 Amazon Corretto 8（非 Alpine）并包含 dejavu 字体和 fontconfig
+            - `my-java-base-8-arm64.tar.gz`：基于 Eclipse Temurin 8 JRE（Ubuntu）并包含 dejavu 字体和 fontconfig
             ### How to use?
             `docker load -i my-java-base-8-arm64.tar.gz`
             ### Video teaching

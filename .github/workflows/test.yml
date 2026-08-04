@@ -33,19 +33,17 @@ jobs:
           base_image="${{ github.event.inputs.docker_images }}"
           base_image="${base_image%%,*}"
           echo "Building my-java-base:8-alpine (ARM64) from ${base_image}"
-
+      
           cat > Dockerfile.font <<EOF
           FROM ${base_image}
-          # 更换为中科大源，避免网络问题
-          RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
-          RUN apk add --no-cache ttf-dejavu fontconfig
+          # 直接用 --repository 指定源，避免 sed 失败
+          RUN apk add --no-cache --repository http://mirrors.ustc.edu.cn/alpine/v3.24/main --repository http://mirrors.ustc.edu.cn/alpine/v3.24/community ttf-dejavu fontconfig
           EOF
-
+      
           docker buildx build --platform linux/arm64 -t my-java-base:8-alpine --load -f Dockerfile.font .
-
+      
           docker save my-java-base:8-alpine | gzip > my-java-base-8-alpine-arm64.tar.gz
           docker rmi my-java-base:8-alpine || true
-          rm Dockerfile.font
 
       - name: List generated files (debug step)
         run: |

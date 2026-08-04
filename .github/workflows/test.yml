@@ -28,7 +28,6 @@ jobs:
             rm "${image_name}-arm64.tar"
           done
 
-      # --- 修正后的构建步骤：显式指定 ARM64 架构 ---
       - name: Build Docker image with fonts (ARM64)
         run: |
           base_image="${{ github.event.inputs.docker_images }}"
@@ -37,16 +36,14 @@ jobs:
 
           cat > Dockerfile.font <<EOF
           FROM ${base_image}
+          # 更换为中科大源，避免网络问题
+          RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
           RUN apk add --no-cache ttf-dejavu fontconfig
           EOF
 
-          # 使用 buildx 构建 ARM64 镜像并加载到本地
           docker buildx build --platform linux/arm64 -t my-java-base:8-alpine --load -f Dockerfile.font .
 
-          # 导出为 ARM64 离线包
           docker save my-java-base:8-alpine | gzip > my-java-base-8-alpine-arm64.tar.gz
-
-          # 清理临时镜像和文件
           docker rmi my-java-base:8-alpine || true
           rm Dockerfile.font
 
@@ -65,8 +62,7 @@ jobs:
           body: |
             [![Github](https://img.shields.io/badge/RELEASE:DockerTarBuilder-123456?logo=github&logoColor=fff&labelColor=green&style=for-the-badge)](https://www.bilibili.com/video/BV1EZ421M7mL) [![Github](https://img.shields.io/badge/国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge)](https://wkdaily.cpolar.top/archives/1)
             ### 包含 ARM64 镜像
-            - `my-java-base-8-alpine-arm64.tar.gz`：包含 ttf-dejavu 和 fontconfig 的 Java 8 基础镜像
-            - 其他为原始镜像的离线包
+            - `my-java-base-8-alpine-arm64.tar.gz`：包含 ttf-dejavu 和 fontconfig 的 Java 8 基础镜像（使用中科大源构建）
             ### How to use?
             `docker load -i my-java-base-8-alpine-arm64.tar.gz`
             ### Video teaching
